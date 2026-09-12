@@ -1,0 +1,29 @@
+# Java / Maven
+brave-test-backend/target/
+*.class
+*.jar
+!brave-test-backend/.mvn/wrapper/*.jar
+
+# Node / Vite
+brave-test-frontend/node_modules/
+brave-test-frontend/dist/
+*.local
+
+# Logs
+*.log
+frontend-dev.log
+
+# E2E 测试截图产物
+shots/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# WorkBuddy 会话数据（非项目源码）
+.workbuddy/
