@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>勇者测试 · 项目总览</title>
+<style>
+  :root {
+    --bg: #0f1420; --panel: #1a2130; --panel2: #212a3d; --line: #2e3a52;
+    --gold: #e6a23c; --green: #67c23a; --blue: #5b8def; --purple: #9d7bde;
+    --text: #e8ecf4; --muted: #8b96ab;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: "Microsoft YaHei", "PingFang SC", sans-serif; line-height: 1.7; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 40px 24px 80px; }
+  header { text-align: center; padding: 48px 0 36px; }
+  header h1 { font-size: 40px; letter-spacing: 6px; }
+  header h1 .hl { color: var(--gold); }
+  header p { color: var(--muted); margin-top: 12px; font-size: 15px; }
+  .badges { margin-top: 18px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .badge { font-size: 12px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 20px; color: var(--muted); background: var(--panel); }
+  h2 { font-size: 22px; margin: 44px 0 18px; padding-left: 12px; border-left: 4px solid var(--gold); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; transition: transform .2s, border-color .2s; }
+  .card:hover { transform: translateY(-3px); border-color: var(--gold); }
+  .card h3 { font-size: 16px; margin-bottom: 8px; }
+  .card p { font-size: 13px; color: var(--muted); }
+  .card .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-bottom: 10px; }
+  .t-gold { background: rgba(230,162,60,.15); color: var(--gold); }
+  .t-blue { background: rgba(91,141,239,.15); color: var(--blue); }
+  .t-green { background: rgba(103,194,58,.15); color: var(--green); }
+  .t-purple { background: rgba(157,123,222,.15); color: var(--purple); }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border-radius: 10px; overflow: hidden; font-size: 14px; }
+  th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--line); }
+  th { background: var(--panel2); color: var(--muted); font-weight: 500; font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  code { background: var(--panel2); padding: 2px 8px; border-radius: 4px; font-family: Consolas, monospace; font-size: 13px; color: var(--gold); }
+  pre { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; font-family: Consolas, monospace; font-size: 13px; overflow-x: auto; color: #a8c7fa; }
+  .flow { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
+  .node { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 18px; text-align: center; font-size: 14px; }
+  .node b { color: var(--gold); display: block; font-size: 13px; }
+  .node small { color: var(--muted); font-size: 11px; }
+  .arrow { color: var(--muted); font-size: 18px; }
+  .tip { background: rgba(230,162,60,.08); border: 1px solid rgba(230,162,60,.3); border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #d9b47c; margin-top: 14px; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 60px; }
+  .screens { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .screens img { width: 100%; border-radius: 10px; border: 1px solid var(--line); }
+  .cap { text-align: center; color: var(--muted); font-size: 12px; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>勇<span class="hl">者</span>测<span class="hl">试</span></h1>
+    <p>文字冒险 × 性格养成 × 自我激励 —— 高污染世界中守住萌芽，共建美好世界</p>
+    <div class="badges">
+      <span class="badge">SpringBoot 3.3.4</span><span class="badge">MyBatis-Plus</span>
+      <span class="badge">MySQL 8 · 25 张表</span><span class="badge">Redis</span><span class="badge">MinIO</span>
+      <span class="badge">Vue 3 + Element Plus</span><span class="badge">Docker Compose</span><span class="badge">GitHub Actions CI</span>
+    </div>
+  </header>
+
+  <h2>🎮 核心玩法闭环</h2>
+  <div class="flow">
+    <div class="node"><b>注册冒险者</b><small>D 级 · 0 金币</small></div><div class="arrow">→</div>
+    <div class="node"><b>任务大厅</b><small>接委托 · 行者善事</small></div><div class="arrow">→</div>
+    <div class="node"><b>剧情 / 修身任务</b><small>赚金币 · 净化萌芽</small></div><div class="arrow">→</div>
+    <div class="node"><b>技能树成长</b><small>经验升级 · 开枝</small></div><div class="arrow">→</div>
+    <div class="node"><b>商店 / 自我商城</b><small>净化剂 · 兑现奖励</small></div>
+  </div>
+  <div class="tip">三协会经济体系：任务佣金 10% 入冒险者协会 · 佣金 60% 月初上缴总管理员 · 知识宝库营利 40% 归知识协会 · 自我商城兑换 10% 会费入协会</div>
+
+  <h2>🏛️ 三大协会体系</h2>
+  <div class="grid">
+    <div class="card"><span class="tag t-gold">行者协会</span><h3>善事任务发布</h3><p>总管理员发善事任务，冒险者申请帮助 → 审批发布；完成善事净化萌芽、获得金币。</p></div>
+    <div class="card"><span class="tag t-blue">冒险者协会</span><h3>委托与等级</h3><p>SABCD 五级委托（D 80~120 → S 12万+）；100 件自然升级 +1 万奖励，越级成功直升 / 失败封禁 1 个月。</p></div>
+    <div class="card"><span class="tag t-green">知识宝库</span><h3>知识有偿共享</h3><p>投稿 → 管理员封装定价 → 日/周/月卡借阅或买断；禁止二次售卖，违规踢出；支持搜索、收藏、续费、举报。</p></div>
+    <div class="card"><span class="tag t-purple">修身养成</span><h3>自我激励系统</h3><p>给自己立任务赚修行币、发展技能树、自建商城兑现现实奖励；连续打卡奖励递增，铸币每日上限 500。</p></div>
+  </div>
+
+  <h2>🧱 技术架构</h2>
+  <pre>浏览器 ──> Nginx (前端 :80) ──> SpringBoot (:8080) ──┬──> MySQL 8   (25 张表 : 13306)
+                                                    ├──> Redis     (排行榜/分布式锁 : 16379)
+                                                    └──> MinIO     (签名 URL 防盗链 : 9000/9001)
+
+GitHub Actions CI ──> mvn test + package / npm build ──> docker compose 一键部署</pre>
+  <div class="tip">并发安全设计：接单 = Redis SETNX 锁 + DB 条件更新双保险防超抢；扣款 = <code>UPDATE ... WHERE balance &gt;= ?</code> 乐观防超支；月度结算 = 幂等键防重复。</div>
+
+  <h2>🔑 内置账号</h2>
+  <table>
+    <tr><th>账号</th><th>密码</th><th>角色</th></tr>
+    <tr><td>superadmin</td><td>admin123</td><td>总管理员（月度结算 / 净化剂生产）</td></tr>
+    <tr><td>xingzhe_admin</td><td>admin123</td><td>行者协会管理员（善事审批）</td></tr>
+    <tr><td>adventurer_admin</td><td>admin123</td><td>冒险者协会管理员（委托审核）</td></tr>
+    <tr><td>knowledge_admin</td><td>admin123</td><td>知识宝库管理员（投稿封装 / 举报处理）</td></tr>
+    <tr><td>（注册即用）</td><td>—</td><td>普通冒险者，D 级起步</td></tr>
+  </table>
+
+  <h2>🚀 快速启动</h2>
+  <pre># 方式一：Docker 一键起全套（推荐）
+docker compose up -d
+# 前端 http://localhost · API 文档 :8080/doc.html · MinIO 控制台 :9001
+
+# 方式二：IDEA 打开工程（.idea 已预置好运行配置）
+# ① deps: docker compose up (mysql/redis/minio)
+# ② brave-backend (local)
+# ③ brave-frontend dev</pre>
+
+  <h2>📸 界面预览</h2>
+  <div class="screens">
+    <div><img src="docs/screenshots/task-hall.png" alt="任务大厅"><div class="cap">任务大厅</div></div>
+    <div><img src="docs/screenshots/story.png" alt="剧情模式"><div class="cap">剧情模式</div></div>
+    <div><img src="docs/screenshots/knowledge.png" alt="知识宝库"><div class="cap">知识宝库</div></div>
+    <div><img src="docs/screenshots/shop.png" alt="商店"><div class="cap">商店</div></div>
+  </div>
+
+  <footer>勇者测试 · Brave Test · GitHub: mqq0000/brave-test · 单页总览由 WorkBuddy 生成</footer>
+</div>
+</body>
+</html>

@@ -28,6 +28,8 @@ services:
   redis:
     image: redis:7-alpine
     container_name: brave-redis
+    ports:
+      - "16379:6379"  # 宿主机可直连（IDEA 本地跑后端用；6379 避开常见占用）
     volumes:
       - redis-data:/data
     healthcheck:
