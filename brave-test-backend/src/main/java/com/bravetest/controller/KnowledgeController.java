@@ -42,11 +42,24 @@ public class KnowledgeController {
         return R.ok(knowledgeService.myContributions(UserContext.getUserId()));
     }
 
-    @Operation(summary = "信息集列表")
+    @Operation(summary = "信息集列表（支持关键词搜索）")
     @GetMapping("/info-sets")
     public R<List<InfoSet>> infoSets(@RequestParam(defaultValue = "1") long page,
-                                     @RequestParam(defaultValue = "10") long size) {
-        return R.ok(knowledgeService.listInfoSets(page, size));
+                                     @RequestParam(defaultValue = "10") long size,
+                                     @RequestParam(required = false) String keyword) {
+        return R.ok(knowledgeService.listInfoSets(page, size, keyword));
+    }
+
+    @Operation(summary = "我的书架（已购买 + 有效借阅）")
+    @GetMapping("/shelf")
+    public R<java.util.Map<String, Object>> myShelf() {
+        return R.ok(knowledgeService.myShelf(UserContext.getUserId()));
+    }
+
+    @Operation(summary = "借阅续费（cardType: 1日卡 2周卡 3月卡，从到期时间顺延）")
+    @PostMapping("/borrows/{id}/renew")
+    public R<Long> renew(@PathVariable Long id, @RequestParam int cardType) {
+        return R.ok(knowledgeService.renewBorrow(UserContext.getUserId(), id, cardType));
     }
 
     @Operation(summary = "购买信息集（永久阅读权，一经售卖不可二次售卖）")

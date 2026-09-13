@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 知识宝库服务：投稿 / 封装定价 / 购买 / 借阅（日/周/月卡）/ 版权违规处置
@@ -173,10 +174,91 @@ public class KnowledgeService {
     // ==================== 信息集 ====================
 
     public List<InfoSet> listInfoSets(long page, long size) {
+        return listInfoSets(page, size, null);
+    }
+
+    /** 信息集列表（支持标题关键词搜索） */
+    public List<InfoSet> listInfoSets(long page, long size, String keyword) {
         return infoSetMapper.selectList(new LambdaQueryWrapper<InfoSet>()
                 .eq(InfoSet::getStatus, 1)
+                .like(keyword != null && !keyword.isBlank(), InfoSet::getTitle, keyword)
                 .orderByDesc(InfoSet::getCreatedAt)
                 .last("LIMIT " + size + " OFFSET " + (page - 1) * size));
+    }
+
+    /**
+     * 我的书架：已购买（永久）+ 有效借阅（含剩余天数）
+     */
+    public java.util.Map<String, Object> myShelf(Long userId) {
+        java.util.Map<String, Object> shelf = new java.util.HashMap<>();
+
+        List<Map<String, Object>> purchased = new java.util.ArrayList<>();
+        for (PurchaseRecord p : purchaseRecordMapper.selectList(new LambdaQueryWrapper<PurchaseRecord>()
+                .eq(PurchaseRecord::getBuyerId, userId)
+                .orderByDesc(PurchaseRecord::getPurchasedAt))) {
+            InfoSet is = infoSetMapper.selectById(p.getInfoSetId());
+            if (is == null) continue;
+            Map<String, Object> row = new java.util.HashMap<>();
+            row.put("infoSetId", is.getId());
+            row.put("title", is.getTitle());
+            row.put("summary", is.getSummary());
+            row.put("price", is.getPrice());
+            row.put("accessType", "PURCHASED");
+            row.put("purchasedAt", p.getPurchasedAt());
+            purchased.add(row);
+        }
+
+        List<Map<String, Object>> borrowing = new java.util.ArrayList<>();
+        for (BorrowRecord b : borrowRecordMapper.selectList(new LambdaQueryWrapper<BorrowRecord>()
+                .eq(BorrowRecord::getUserId, userId)
+                .gt(BorrowRecord::getExpireAt, LocalDateTime.now())
+                .orderByDesc(BorrowRecord::getExpireAt))) {
+            InfoSet is = infoSetMapper.selectById(b.getInfoSetId());
+            if (is == null) continue;
+            Map<String, Object> row = new java.util.HashMap<>();
+            row.put("infoSetId", is.getId());
+            row.put("title", is.getTitle());
+            row.put("summary", is.getSummary());
+            row.put("price", is.getPrice());
+            row.put("accessType", "BORROWING");
+            row.put("cardType", b.getCardType());
+            row.put("borrowId", b.getId());
+            row.put("expireAt", b.getExpireAt());
+            row.put("remainDays", java.time.Duration.between(LocalDateTime.now(), b.getExpireAt()).toDays());
+            borrowing.add(row);
+        }
+
+        shelf.put("purchased", purchased);
+        shelf.put("borrowing", borrowing);
+        return shelf;
+    }
+
+    /**
+     * 借阅续费：对未过期借阅按卡类型顺延，从当前到期时间起加天数
+     */
+    @Transactional
+    public Long renewBorrow(Long userId, Long borrowId, int cardType) {
+        if (cardType < CARD_DAY || cardType > CARD_MONTH) {
+            throw new BusinessException("借阅卡类型非法");
+        }
+        BorrowRecord borrow = borrowRecordMapper.selectById(borrowId);
+        if (borrow == null || !userId.equals(borrow.getUserId())) {
+            throw new BusinessException(403, "无权操作该借阅记录");
+        }
+        if (borrow.getExpireAt().isBefore(LocalDateTime.now())) {
+            throw new BusinessException("借阅已过期，请重新借阅");
+        }
+        InfoSet infoSet = infoSetMapper.selectById(borrow.getInfoSetId());
+        if (infoSet == null || infoSet.getStatus() != 1) {
+            throw new BusinessException("信息集不存在或已下架");
+        }
+        long price = Math.max(1, Math.round(infoSet.getPrice() * CARD_RATE[cardType]));
+        financeService.deductGold(requireNotKnowledgeBanned(userId).getId(), price,
+                "KNOWLEDGE_RENEW", "INFO_SET", infoSet.getId());
+        borrow.setExpireAt(borrow.getExpireAt().plusDays(CARD_DAYS[cardType]));
+        borrowRecordMapper.updateById(borrow);
+        settleRevenue(infoSet, price);
+        return borrow.getId();
     }
 
     /**

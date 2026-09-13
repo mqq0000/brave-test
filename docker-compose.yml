@@ -12,6 +12,8 @@ services:
       MYSQL_ROOT_PASSWORD: root123
       MYSQL_DATABASE: brave_test
       TZ: Asia/Shanghai
+    ports:
+      - "13306:3306"  # 宿主机可直连（Navicat/DBeaver: localhost:13306 root/root123；3306 被本机 MySQL 占用故用 13306）
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       - mysql-data:/var/lib/mysql

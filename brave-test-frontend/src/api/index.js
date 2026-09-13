@@ -39,6 +39,9 @@ export const borrowInfoSet = (id, cardType) =>
 export const readInfoSet = (id) => request.get(`/knowledge/info-sets/${id}/content`)
 export const myPurchases = () => request.get('/knowledge/purchases/mine')
 export const myBorrows = () => request.get('/knowledge/borrows/mine')
+export const myShelf = () => request.get('/knowledge/shelf')
+export const renewBorrow = (id, cardType) =>
+  request.post(`/knowledge/borrows/${id}/renew`, null, { params: { cardType } })
 
 // 剧情与觉醒测试
 export const listChapters = () => request.get('/story/chapters')
