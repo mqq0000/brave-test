@@ -229,6 +229,29 @@ CREATE TABLE IF NOT EXISTS `violation_record` (
     KEY `idx_user` (`user_id`)
 ) ENGINE = InnoDB COMMENT ='违规记录表';
 
+CREATE TABLE IF NOT EXISTS `violation_report` (
+    `id`            BIGINT       NOT NULL,
+    `reporter_id`   BIGINT       NOT NULL COMMENT '举报人userId',
+    `offender_id`   BIGINT       NOT NULL COMMENT '被举报人userId',
+    `info_set_id`   BIGINT       NULL COMMENT '关联信息集',
+    `description`   VARCHAR(500) NOT NULL COMMENT '举报说明',
+    `status`        TINYINT      NOT NULL DEFAULT 0 COMMENT '0待处理 1已处罚 2已驳回',
+    `handler_id`    BIGINT       NULL COMMENT '处理管理员userId',
+    `handle_remark` VARCHAR(255) NULL,
+    `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_status` (`status`)
+) ENGINE = InnoDB COMMENT ='知识宝库举报表';
+
+CREATE TABLE IF NOT EXISTS `knowledge_favorite` (
+    `id`          BIGINT   NOT NULL,
+    `user_id`     BIGINT   NOT NULL,
+    `info_set_id` BIGINT   NOT NULL,
+    `created_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_user_set` (`user_id`, `info_set_id`)
+) ENGINE = InnoDB COMMENT ='知识宝库收藏表';
+
 -- 15. 金币流水表
 CREATE TABLE IF NOT EXISTS `gold_flow` (
     `id`            BIGINT   NOT NULL,

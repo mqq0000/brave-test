@@ -166,6 +166,23 @@ public class AdminController {
         return R.ok();
     }
 
+    @Operation(summary = "知识宝库管理员：待处理举报列表")
+    @GetMapping("/knowledge/reports/pending")
+    public R<java.util.List<com.bravetest.entity.ViolationReport>> pendingReports() {
+        requireRole("KNOWLEDGE_ADMIN", "SUPER_ADMIN");
+        return R.ok(knowledgeService.listPendingReports());
+    }
+
+    @Operation(summary = "知识宝库管理员：处理举报（penalize=true 踢出被举报人，否则驳回）")
+    @PostMapping("/knowledge/reports/{id}/handle")
+    public R<Void> handleReport(@PathVariable Long id,
+                                @RequestParam boolean penalize,
+                                @RequestParam(required = false) String remark) {
+        requireRole("KNOWLEDGE_ADMIN", "SUPER_ADMIN");
+        knowledgeService.handleReport(UserContext.getUserId(), id, penalize, remark);
+        return R.ok();
+    }
+
     private void requireRole(String... allowed) {
         String role = UserContext.getRole();
         for (String a : allowed) {

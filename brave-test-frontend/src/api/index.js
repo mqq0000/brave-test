@@ -42,6 +42,13 @@ export const myBorrows = () => request.get('/knowledge/borrows/mine')
 export const myShelf = () => request.get('/knowledge/shelf')
 export const renewBorrow = (id, cardType) =>
   request.post(`/knowledge/borrows/${id}/renew`, null, { params: { cardType } })
+export const favoriteInfoSet = (id) => request.post(`/knowledge/info-sets/${id}/favorite`)
+export const myFavorites = () => request.get('/knowledge/favorites')
+export const myFavoriteIds = () => request.get('/knowledge/favorites/ids')
+export const submitReport = (params) => request.post('/knowledge/reports', null, { params })
+export const pendingReports = () => request.get('/admin/knowledge/reports/pending')
+export const handleReport = (id, penalize, remark) =>
+  request.post(`/admin/knowledge/reports/${id}/handle`, null, { params: { penalize, remark } })
 
 // 剧情与觉醒测试
 export const listChapters = () => request.get('/story/chapters')

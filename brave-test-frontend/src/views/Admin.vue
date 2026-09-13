@@ -57,6 +57,24 @@
       </div>
     </el-card>
 
+    <!-- 知识宝库管理员：举报处理 -->
+    <el-card v-if="isRole('KNOWLEDGE_ADMIN', 'SUPER_ADMIN')" style="margin-bottom: 16px">
+      <template #header>知识宝库 · 待处理举报（{{ reports.length }}）</template>
+      <el-empty v-if="!reports.length" description="暂无待处理举报" :image-size="60" />
+      <el-table v-else :data="reports" stripe size="small">
+        <el-table-column prop="description" label="举报说明" min-width="240" show-overflow-tooltip />
+        <el-table-column prop="offenderId" label="被举报人ID" width="200" />
+        <el-table-column prop="infoSetId" label="关联信息集" width="200" />
+        <el-table-column label="操作" width="220">
+          <template #default="{ row }">
+            <el-button size="small" type="danger"
+                       @click="onHandleReport(row, true)">核实违规，踢出</el-button>
+            <el-button size="small" @click="onHandleReport(row, false)">驳回举报</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
     <!-- 总管理员 -->
     <el-card v-if="isRole('SUPER_ADMIN')">
       <template #header>总管理员 · 世界运营</template>
@@ -106,7 +124,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   pendingTasks, auditTask, pendingApplies, auditApply,
   pendingContributions, packageContribution, reportViolation, listPurifier,
-  publishXingzheTask, producePurifier, triggerSettle
+  publishXingzheTask, producePurifier, triggerSettle,
+  pendingReports, handleReport
 } from '../api'
 
 const role = ref(localStorage.getItem('role') || '')
@@ -120,6 +139,7 @@ const roleName = ref(ROLE_NAMES[role.value] || role.value)
 const tasks = ref([])
 const applies = ref([])
 const contributions = ref([])
+const reports = ref([])
 const offender = ref('')
 const packageVisible = ref(false)
 const packaging = ref(null)
@@ -131,7 +151,18 @@ const settleMonth = ref('')
 async function load() {
   if (isRole('ADVENTURER_ADMIN', 'SUPER_ADMIN')) tasks.value = await pendingTasks()
   if (isRole('XINGZHE_ADMIN', 'SUPER_ADMIN')) applies.value = await pendingApplies()
-  if (isRole('KNOWLEDGE_ADMIN', 'SUPER_ADMIN')) contributions.value = await pendingContributions()
+  if (isRole('KNOWLEDGE_ADMIN', 'SUPER_ADMIN')) {
+    contributions.value = await pendingContributions()
+    try { reports.value = (await pendingReports()) || [] } catch { reports.value = [] }
+  }
+}
+
+async function onHandleReport(row, penalize) {
+  const action = penalize ? '核实违规并踢出该冒险者' : '驳回该举报'
+  await ElMessageBox.confirm(`确认${action}？`, '处理举报', { type: 'warning' })
+  await handleReport(row.id, penalize, penalize ? '经核实存在二次售卖行为' : '证据不足')
+  ElMessage.success(penalize ? '已踢出知识宝库' : '举报已驳回')
+  load()
 }
 
 async function onAuditTask(row, pass) {

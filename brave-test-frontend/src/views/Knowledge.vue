@@ -46,6 +46,9 @@
                   </template>
                 </el-dropdown>
                 <el-button size="small" type="success" plain @click="onRead(set)">阅读</el-button>
+                <el-button size="small" :type="favIds.includes(set.id) ? 'warning' : 'default'"
+                           @click="onFavorite(set)">{{ favIds.includes(set.id) ? '★ 已收藏' : '☆ 收藏' }}</el-button>
+                <el-button size="small" type="danger" plain @click="openReport(set)">举报</el-button>
               </div>
             </el-card>
           </el-col>
@@ -98,7 +101,24 @@
           </el-row>
         </template>
 
-        <el-empty v-if="!shelf.purchased.length && !shelf.borrowing.length"
+        <template v-if="favorites.length">
+          <div class="shelf-section">我的收藏</div>
+          <el-row :gutter="16">
+            <el-col v-for="row in favorites" :key="'f' + row.infoSetId" :span="8" style="margin-bottom: 16px">
+              <el-card>
+                <div class="set-title">{{ row.title }}</div>
+                <div class="set-summary">{{ row.summary || '（暂无摘要）' }}</div>
+                <div class="shelf-meta">{{ row.status === 1 ? '在售' : '已下架' }} · {{ row.price }} 金币</div>
+                <div style="display: flex; gap: 8px">
+                  <el-button v-if="row.status === 1" size="small" type="success" plain @click="onRead(row)">阅读</el-button>
+                  <el-button size="small" @click="onUnfavorite(row)">取消收藏</el-button>
+                </div>
+              </el-card>
+            </el-col>
+          </el-row>
+        </template>
+
+        <el-empty v-if="!shelf.purchased.length && !shelf.borrowing.length && !favorites.length"
                   description="书架还是空的，去广场买一个或借一本来读吧" />
       </el-tab-pane>
     </el-tabs>
@@ -119,6 +139,20 @@
     <el-dialog v-model="readVisible" :title="reading?.title || '信息集'" width="560px">
       <div class="read-content">{{ content }}</div>
     </el-dialog>
+
+    <el-dialog v-model="reportVisible" title="举报版权违规" width="480px">
+      <el-form label-width="80px">
+        <el-form-item label="信息集"><span>{{ reportTarget?.title }}</span></el-form-item>
+        <el-form-item label="举报说明">
+          <el-input v-model="reportForm.description" type="textarea" :rows="4"
+                    placeholder="请描述对方二次售卖/传播牟利的具体情况（如转卖链接、聊天记录截图位置等）" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="reportVisible = false">取消</el-button>
+        <el-button type="danger" @click="doReport">提交举报（管理员核实后将处置违规者）</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -127,18 +161,23 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   contribute, listInfoSets, purchaseInfoSet, borrowInfoSet, readInfoSet,
-  myShelf, renewBorrow,
+  myShelf, renewBorrow, favoriteInfoSet, myFavorites, myFavoriteIds, submitReport,
 } from '../api'
 
 const activeTab = ref('market')
 const keyword = ref('')
 const infoSets = ref([])
 const shelf = reactive({ purchased: [], borrowing: [] })
+const favorites = ref([])
+const favIds = ref([])
 const contributeVisible = ref(false)
 const readVisible = ref(false)
 const reading = ref(null)
 const content = ref('')
 const form = ref({ title: '', content: '' })
+const reportVisible = ref(false)
+const reportTarget = ref(null)
+const reportForm = ref({ description: '' })
 
 const day = (s) => Math.max(1, Math.round(s.price * 0.1))
 const week = (s) => Math.max(1, Math.round(s.price * 0.25))
@@ -146,22 +185,57 @@ const month = (s) => Math.max(1, Math.round(s.price * 0.5))
 const formatTime = (t) => (t ? String(t).replace('T', ' ').slice(0, 16) : '')
 
 async function load() {
-  infoSets.value = await listInfoSets({ page: 1, size: 20 })
+  infoSets.value = await listInfoSets({ page: 1, size: 20, keyword: keyword.value || undefined })
+  try {
+    favIds.value = (await myFavoriteIds()) || []
+  } catch { favIds.value = [] }
 }
 
 async function doSearch() {
-  infoSets.value = await listInfoSets({ page: 1, size: 20, keyword: keyword.value || undefined })
+  await load()
 }
 
 async function loadShelf() {
   const res = await myShelf()
   shelf.purchased = res.purchased || []
   shelf.borrowing = res.borrowing || []
+  try {
+    favorites.value = (await myFavorites()) || []
+  } catch { favorites.value = [] }
 }
 
 function onTabChange(tab) {
   if (tab === 'shelf') loadShelf()
   else load()
+}
+
+async function onFavorite(set) {
+  const on = await favoriteInfoSet(set.id)
+  ElMessage.success(on ? '已收藏' : '已取消收藏')
+  if (activeTab.value === 'shelf') loadShelf()
+  else load()
+}
+
+async function onUnfavorite(row) {
+  await favoriteInfoSet(row.infoSetId)
+  ElMessage.success('已取消收藏')
+  loadShelf()
+}
+
+function openReport(set) {
+  reportTarget.value = set
+  reportForm.value.description = ''
+  reportVisible.value = true
+}
+
+async function doReport() {
+  await submitReport({
+    offenderId: reportTarget.value.contributorId,
+    infoSetId: reportTarget.value.id,
+    description: reportForm.value.description,
+  })
+  ElMessage.success('举报已提交，知识宝库管理员将尽快核实')
+  reportVisible.value = false
 }
 
 async function doContribute() {

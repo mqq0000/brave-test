@@ -50,6 +50,8 @@ public class KnowledgeService {
     private final BorrowRecordMapper borrowRecordMapper;
     private final PurchaseRecordMapper purchaseRecordMapper;
     private final ViolationRecordMapper violationRecordMapper;
+    private final com.bravetest.mapper.ViolationReportMapper violationReportMapper;
+    private final com.bravetest.mapper.KnowledgeFavoriteMapper favoriteMapper;
     private final AdventurerMapper adventurerMapper;
     private final com.bravetest.mapper.PurificationRecordMapper purificationRecordMapper;
     private final FinanceService financeService;
@@ -410,5 +412,112 @@ public class KnowledgeService {
             throw new BusinessException(403, "已被知识宝库处置，永久失去进入知识宝库的权利");
         }
         return adv;
+    }
+
+    // ==================== 收藏 ====================
+
+    /**
+     * 收藏/取消收藏（幂等切换），返回 true=已收藏 false=已取消
+     */
+    @Transactional
+    public boolean toggleFavorite(Long userId, Long infoSetId) {
+        if (infoSetMapper.selectById(infoSetId) == null) {
+            throw new BusinessException("信息集不存在");
+        }
+        com.bravetest.entity.KnowledgeFavorite existing = favoriteMapper.selectOne(
+                new LambdaQueryWrapper<com.bravetest.entity.KnowledgeFavorite>()
+                        .eq(com.bravetest.entity.KnowledgeFavorite::getUserId, userId)
+                        .eq(com.bravetest.entity.KnowledgeFavorite::getInfoSetId, infoSetId));
+        if (existing != null) {
+            favoriteMapper.deleteById(existing.getId());
+            return false;
+        }
+        com.bravetest.entity.KnowledgeFavorite fav = new com.bravetest.entity.KnowledgeFavorite();
+        fav.setUserId(userId);
+        fav.setInfoSetId(infoSetId);
+        fav.setCreatedAt(LocalDateTime.now());
+        favoriteMapper.insert(fav);
+        return true;
+    }
+
+    /**
+     * 我的收藏（含信息集摘要）
+     */
+    public List<Map<String, Object>> myFavorites(Long userId) {
+        List<Map<String, Object>> result = new java.util.ArrayList<>();
+        for (com.bravetest.entity.KnowledgeFavorite f : favoriteMapper.selectList(
+                new LambdaQueryWrapper<com.bravetest.entity.KnowledgeFavorite>()
+                        .eq(com.bravetest.entity.KnowledgeFavorite::getUserId, userId)
+                        .orderByDesc(com.bravetest.entity.KnowledgeFavorite::getCreatedAt))) {
+            InfoSet is = infoSetMapper.selectById(f.getInfoSetId());
+            if (is == null) continue;
+            Map<String, Object> row = new java.util.HashMap<>();
+            row.put("infoSetId", is.getId());
+            row.put("title", is.getTitle());
+            row.put("summary", is.getSummary());
+            row.put("price", is.getPrice());
+            row.put("status", is.getStatus());
+            row.put("favoritedAt", f.getCreatedAt());
+            result.add(row);
+        }
+        return result;
+    }
+
+    /** 我收藏的信息集 id 集合（供列表页标记 ♡） */
+    public List<Long> myFavoriteIds(Long userId) {
+        return favoriteMapper.selectList(new LambdaQueryWrapper<com.bravetest.entity.KnowledgeFavorite>()
+                        .eq(com.bravetest.entity.KnowledgeFavorite::getUserId, userId))
+                .stream().map(com.bravetest.entity.KnowledgeFavorite::getInfoSetId).toList();
+    }
+
+    // ==================== 举报 ====================
+
+    /**
+     * 用户提交版权违规举报（不可举报自己）
+     */
+    public Long submitReport(Long reporterUserId, Long offenderUserId, Long infoSetId, String description) {
+        if (reporterUserId.equals(offenderUserId)) {
+            throw new BusinessException("不能举报自己");
+        }
+        if (description == null || description.isBlank()) {
+            throw new BusinessException("请填写举报说明");
+        }
+        com.bravetest.entity.ViolationReport report = new com.bravetest.entity.ViolationReport();
+        report.setReporterId(reporterUserId);
+        report.setOffenderId(offenderUserId);
+        report.setInfoSetId(infoSetId);
+        report.setDescription(description);
+        report.setStatus(com.bravetest.entity.ViolationReport.ST_PENDING);
+        report.setCreatedAt(LocalDateTime.now());
+        violationReportMapper.insert(report);
+        return report.getId();
+    }
+
+    /** 待处理举报列表 */
+    public List<com.bravetest.entity.ViolationReport> listPendingReports() {
+        return violationReportMapper.selectList(
+                new LambdaQueryWrapper<com.bravetest.entity.ViolationReport>()
+                        .eq(com.bravetest.entity.ViolationReport::getStatus,
+                                com.bravetest.entity.ViolationReport.ST_PENDING)
+                        .orderByAsc(com.bravetest.entity.ViolationReport::getCreatedAt));
+    }
+
+    /**
+     * 管理员处理举报：penalize=true 踢出知识宝库（复用 reportViolation），否则驳回
+     */
+    @Transactional
+    public void handleReport(Long adminUserId, Long reportId, boolean penalize, String remark) {
+        com.bravetest.entity.ViolationReport report = violationReportMapper.selectById(reportId);
+        if (report == null || report.getStatus() != com.bravetest.entity.ViolationReport.ST_PENDING) {
+            throw new BusinessException("举报不存在或已处理");
+        }
+        if (penalize) {
+            reportViolation(adminUserId, report.getOffenderId(), report.getInfoSetId());
+        }
+        report.setStatus(penalize ? com.bravetest.entity.ViolationReport.ST_PENALIZED
+                : com.bravetest.entity.ViolationReport.ST_DISMISSED);
+        report.setHandlerId(adminUserId);
+        report.setHandleRemark(remark);
+        violationReportMapper.updateById(report);
     }
 }

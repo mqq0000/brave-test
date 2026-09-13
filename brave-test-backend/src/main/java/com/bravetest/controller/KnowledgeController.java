@@ -62,6 +62,32 @@ public class KnowledgeController {
         return R.ok(knowledgeService.renewBorrow(UserContext.getUserId(), id, cardType));
     }
 
+    @Operation(summary = "收藏/取消收藏信息集（返回 true=已收藏）")
+    @PostMapping("/info-sets/{id}/favorite")
+    public R<Boolean> favorite(@PathVariable Long id) {
+        return R.ok(knowledgeService.toggleFavorite(UserContext.getUserId(), id));
+    }
+
+    @Operation(summary = "我的收藏列表")
+    @GetMapping("/favorites")
+    public R<List<java.util.Map<String, Object>>> myFavorites() {
+        return R.ok(knowledgeService.myFavorites(UserContext.getUserId()));
+    }
+
+    @Operation(summary = "我收藏的信息集 id（用于列表标记）")
+    @GetMapping("/favorites/ids")
+    public R<List<Long>> myFavoriteIds() {
+        return R.ok(knowledgeService.myFavoriteIds(UserContext.getUserId()));
+    }
+
+    @Operation(summary = "举报版权违规（offenderId 被举报人，infoSetId 可选）")
+    @PostMapping("/reports")
+    public R<Long> report(@RequestParam Long offenderId,
+                          @RequestParam(required = false) Long infoSetId,
+                          @RequestParam String description) {
+        return R.ok(knowledgeService.submitReport(UserContext.getUserId(), offenderId, infoSetId, description));
+    }
+
     @Operation(summary = "购买信息集（永久阅读权，一经售卖不可二次售卖）")
     @PostMapping("/info-sets/{id}/purchase")
     public R<Long> purchase(@PathVariable Long id) {
