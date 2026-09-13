@@ -61,13 +61,13 @@ const ok = (name, cond, detail = '') =>
   ok('进入章节可见剧情节点', !nodeBody.includes('ç¬') && (nodeBody.includes('选择') || nodeBody.includes('你')));
   await page.screenshot({ path: SHOTS + '03-story.png', fullPage: true });
 
-  // 5. 觉醒测试：开始作答
-  await page.goto(BASE + '/test', { waitUntil: 'networkidle' }).catch(() => {});
+  // 5. 修身养成（自我激励系统）
+  await page.goto(BASE + '/self', { waitUntil: 'networkidle' }).catch(() => {});
   await page.waitForTimeout(1000);
   await page.click('.el-button--primary').catch(() => {});
   await page.waitForTimeout(1200);
   const testBody = await page.textContent('body');
-  ok('觉醒测试页有题目', testBody.includes('情境') || testBody.includes('第'));
+  ok('修身养成页可用（自我任务/技能树）', testBody.includes('自我任务') && testBody.includes('技能树'));
   await page.screenshot({ path: SHOTS + '04-test.png', fullPage: true });
 
   // 6. 商城

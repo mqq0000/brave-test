@@ -73,3 +73,17 @@ export const pendingContributions = () => request.get('/admin/knowledge/contribu
 export const packageContribution = (id, params) =>
   request.post(`/admin/knowledge/contributions/${id}/package`, null, { params })
 export const reportViolation = (params) => request.post('/admin/knowledge/violations', null, { params })
+
+// 修身养成（自我激励）
+export const selfTasks = () => request.get('/self/tasks')
+export const createSelfTask = (data) => request.post('/self/tasks', data)
+export const completeSelfTask = (id) => request.post(`/self/tasks/${id}/complete`)
+export const abandonSelfTask = (id) => request.post(`/self/tasks/${id}/abandon`)
+export const selfSkills = () => request.get('/self/skills')
+export const initSelfSkills = () => request.post('/self/skills/init')
+export const branchSkill = (data) => request.post('/self/skills', data)
+export const selfShopItems = () => request.get('/self/shop/items')
+export const addSelfShopItem = (data) => request.post('/self/shop/items', data)
+export const offShelfSelfItem = (id) => request.post(`/self/shop/items/${id}/offshelf`)
+export const redeemSelfItem = (id) => request.post(`/self/shop/items/${id}/redeem`)
+export const selfRedemptions = () => request.get('/self/redemptions')

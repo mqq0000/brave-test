@@ -252,6 +252,59 @@ CREATE TABLE IF NOT EXISTS `knowledge_favorite` (
     UNIQUE KEY `uk_user_set` (`user_id`, `info_set_id`)
 ) ENGINE = InnoDB COMMENT ='知识宝库收藏表';
 
+-- ============================================================
+-- 修身·自我激励系统（自我任务 / 技能树 / 自我奖励商城）
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `self_task` (
+    `id`                BIGINT       NOT NULL,
+    `user_id`           BIGINT       NOT NULL,
+    `title`             VARCHAR(100) NOT NULL,
+    `description`       VARCHAR(300) NULL,
+    `coin_reward`       INT          NOT NULL DEFAULT 10,
+    `skill_id`          BIGINT       NULL COMMENT '关联技能，完成涨经验',
+    `repeat_type`       TINYINT      NOT NULL DEFAULT 0 COMMENT '0一次性 1每日',
+    `status`            TINYINT      NOT NULL DEFAULT 1 COMMENT '1进行中 2已完成 3已放弃',
+    `last_completed_at` DATETIME     NULL,
+    `created_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_user` (`user_id`, `status`)
+) ENGINE = InnoDB COMMENT ='自我任务表（修身·自我激励）';
+
+CREATE TABLE IF NOT EXISTS `skill` (
+    `id`         BIGINT      NOT NULL,
+    `user_id`    BIGINT      NOT NULL,
+    `parent_id`  BIGINT      NULL COMMENT '父技能，NULL为根',
+    `name`       VARCHAR(50) NOT NULL,
+    `exp`        INT         NOT NULL DEFAULT 0 COMMENT '经验，每100升1级',
+    `created_at` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_user` (`user_id`)
+) ENGINE = InnoDB COMMENT ='技能树';
+
+CREATE TABLE IF NOT EXISTS `self_shop_item` (
+    `id`          BIGINT       NOT NULL,
+    `user_id`     BIGINT       NOT NULL,
+    `name`        VARCHAR(100) NOT NULL,
+    `description` VARCHAR(300) NULL,
+    `cost`        INT          NOT NULL,
+    `status`      TINYINT      NOT NULL DEFAULT 1 COMMENT '1上架 2下架',
+    `created_at`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_user` (`user_id`, `status`)
+) ENGINE = InnoDB COMMENT ='自我奖励商城商品';
+
+CREATE TABLE IF NOT EXISTS `self_redemption` (
+    `id`          BIGINT       NOT NULL,
+    `user_id`     BIGINT       NOT NULL,
+    `item_id`     BIGINT       NOT NULL,
+    `item_name`   VARCHAR(100) NOT NULL,
+    `cost`        INT          NOT NULL,
+    `assoc_fee`   INT          NOT NULL DEFAULT 0 COMMENT '入冒险者协会的会费(10%)',
+    `redeemed_at` DATETIME     NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `idx_user` (`user_id`, `redeemed_at`)
+) ENGINE = InnoDB COMMENT ='自我商城兑换记录';
+
 -- 15. 金币流水表
 CREATE TABLE IF NOT EXISTS `gold_flow` (
     `id`            BIGINT   NOT NULL,

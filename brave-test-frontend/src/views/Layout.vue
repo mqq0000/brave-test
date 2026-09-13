@@ -4,7 +4,7 @@
       <div class="brand"><span class="sprout"></span> 勇者测试</div>
       <el-menu :default-active="$route.path" router>
         <el-menu-item index="/story"><el-icon><Guide /></el-icon>冒险剧情</el-menu-item>
-        <el-menu-item index="/test"><el-icon><MagicStick /></el-icon>觉醒测试</el-menu-item>
+        <el-menu-item index="/self"><el-icon><Aim /></el-icon>修身养成</el-menu-item>
         <el-menu-item index="/tasks"><el-icon><List /></el-icon>任务大厅</el-menu-item>
         <el-menu-item index="/shop"><el-icon><ShoppingCart /></el-icon>冒险者商城</el-menu-item>
         <el-menu-item index="/knowledge"><el-icon><Reading /></el-icon>知识宝库</el-menu-item>
