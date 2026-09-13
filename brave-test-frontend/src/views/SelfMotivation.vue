@@ -3,6 +3,30 @@
     <el-alert type="success" :closable="false" style="margin-bottom: 16px"
       title="修身养成 · 自我激励系统：给自己立任务、赚修行币、发展技能树，用赚到的币兑现给自己的现实奖励。上善若水，事竟成。" />
 
+    <el-row :gutter="16" style="margin-bottom: 16px">
+      <el-col :span="8">
+        <el-card class="stat-card coin-card">
+          <div class="stat-label">💰 我的修行币</div>
+          <div class="stat-value coin">{{ goldBalance }}</div>
+          <div class="tip">完成自我任务赚取，可兑现自我商城奖励</div>
+        </el-card>
+      </el-col>
+      <el-col :span="8">
+        <el-card class="stat-card">
+          <div class="stat-label">🌱 萌芽污染值</div>
+          <div class="stat-value green">{{ pollution }}</div>
+          <div class="tip">每完成一次自我承诺，净化萌芽 -2</div>
+        </el-card>
+      </el-col>
+      <el-col :span="8">
+        <el-card class="stat-card">
+          <div class="stat-label">🌿 技能总等级</div>
+          <div class="stat-value">{{ skillTotalLevel }}</div>
+          <div class="tip">完成关联任务技能涨经验，每 100 升 1 级</div>
+        </el-card>
+      </el-col>
+    </el-row>
+
     <el-tabs v-model="activeTab" @tab-change="onTabChange">
       <!-- ============ 自我任务 ============ -->
       <el-tab-pane label="自我任务" name="tasks">
@@ -170,6 +194,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
+  getMyProfile,
   selfTasks, createSelfTask, completeSelfTask, abandonSelfTask,
   selfSkills, initSelfSkills, branchSkill,
   selfShopItems, addSelfShopItem, offShelfSelfItem, redeemSelfItem, selfRedemptions,
@@ -180,6 +205,10 @@ const tasks = ref([])
 const skills = ref([])
 const items = ref([])
 const redemptions = ref([])
+const goldBalance = ref(0)
+const pollution = ref(0)
+const skillTotalLevel = computed(() =>
+  skills.value.reduce((sum, s) => sum + (s.level || 0), 0))
 const taskForm = ref({ title: '', coinReward: 20, skillId: null, repeatType: 0 })
 const itemForm = ref({ name: '', description: '', cost: 50 })
 const branchVisible = ref(false)
@@ -215,6 +244,11 @@ const formatTime = (t) => (t ? String(t).replace('T', ' ').slice(0, 16) : '')
 
 async function loadTasks() { tasks.value = await selfTasks() }
 async function loadSkills() { skills.value = await selfSkills() }
+async function loadBalance() {
+  const me = await getMyProfile()
+  goldBalance.value = Number(me.goldBalance ?? 0)
+  pollution.value = Number(me.pollutionValue ?? 0)
+}
 async function loadShop() {
   items.value = await selfShopItems()
   redemptions.value = await selfRedemptions()
@@ -243,6 +277,7 @@ async function doComplete(t) {
   }
   ElMessage.success(msg + '，萌芽净化 +2')
   loadTasks()
+  loadBalance()
 }
 
 async function doAbandon(t) {
@@ -268,6 +303,7 @@ async function doBranch() {
   ElMessage.success('开枝成功，技能树又长了一截')
   branchVisible.value = false
   loadSkills()
+  loadBalance()
 }
 
 async function doAddItem() {
@@ -287,11 +323,13 @@ async function doRedeem(it) {
   const r = await redeemSelfItem(it.id)
   ElMessage.success(`已兑换「${r.itemName}」，花费 ${r.cost} 币（含协会会费 ${r.assocFee}）——好好享受！`)
   loadShop()
+  loadBalance()
 }
 
 onMounted(() => {
   loadTasks()
   loadSkills()
+  loadBalance()
 })
 </script>
 
@@ -313,4 +351,10 @@ onMounted(() => {
 .skill-name { font-size: 14px; font-weight: 500; margin-bottom: 8px; display: flex; align-items: center; }
 .skill-exp { font-size: 12px; color: #909399; margin-top: 6px; }
 .shelf-section { font-size: 14px; font-weight: 600; margin: 16px 0 10px; }
+.stat-card { text-align: left; }
+.coin-card { border-left: 3px solid #e6a23c; }
+.stat-label { font-size: 13px; color: #909399; margin-bottom: 6px; }
+.stat-value { font-size: 28px; font-weight: 600; line-height: 1.2; }
+.stat-value.coin { color: #e6a23c; }
+.stat-value.green { color: #67c23a; }
 </style>
