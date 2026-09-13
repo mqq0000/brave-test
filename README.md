@@ -45,6 +45,27 @@ docker compose up -d
 
 > ⚠️ compose 内密码（root123 / minioadmin123）与 JWT 密钥均为演示默认值，生产环境请务必替换。
 
+## 界面预览
+
+| 登录 / 觉醒 | 任务大厅 |
+|---|---|
+| ![登录](docs/screenshots/login.png) | ![任务大厅](docs/screenshots/task-hall.png) |
+
+| 冒险剧情 | 觉醒测试 |
+|---|---|
+| ![剧情](docs/screenshots/story.png) | ![觉醒测试](docs/screenshots/awaken-test.png) |
+
+| 冒险者商城 | 知识宝库 |
+|---|---|
+| ![商城](docs/screenshots/shop.png) | ![知识宝库](docs/screenshots/knowledge.png) |
+
+<details>
+<summary>更多截图</summary>
+
+![我的档案](docs/screenshots/profile.png)
+
+</details>
+
 ## 本地开发
 
 ```bash
