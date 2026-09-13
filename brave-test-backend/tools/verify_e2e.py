@@ -107,7 +107,7 @@ check("bob 提交成果", call("POST", f"/tasks/{xz_id}/submit", token=bobs).get
 r = call("POST", f"/tasks/{xz_id}/verify", token=admins["superadmin"], form={"success": "true"})
 check("验收成功(入账+净化)", r.get("code") == 0, str(r.get("message")))
 me3 = call("GET", "/adventurer/me", token=bobs).get("data") or {}
-check("善事任务入账+净化", me3.get("goldBalance", 0) > 0,
+check("善事任务入账+净化", int(me3.get("goldBalance") or 0) > 0,
       f"gold={me3.get('goldBalance')} pollution={me2.get('pollutionValue')}->{me3.get('pollutionValue')}")
 
 print("-" * 60)
@@ -128,7 +128,7 @@ check("审批通过后任务在行者大厅发布", isinstance(xztasks, list) an
 
 print("=" * 60)
 print("场景4 冒险者委托闭环(发布->审核->接单->验收)")
-gold_bob = me3.get("goldBalance", 0)
+gold_bob = int(me3.get("goldBalance") or 0)
 reward = 80 if gold_bob >= 80 else 0
 r = call("POST", "/adventurer/tasks", token=bobs,
          data={"title": "寻找失落的信物", "description": "护送到北门", "taskLevel": "D", "rewardGold": reward})
@@ -145,7 +145,7 @@ check("alice 提交", call("POST", f"/tasks/{tid}/submit", token=als).get("code"
 r = call("POST", f"/tasks/{tid}/verify", token=bobs, form={"success": "true"})
 check("发布者bob验收成功(90%入账)", r.get("code") == 0, str(r.get("message")))
 mea = call("GET", "/adventurer/me", token=als).get("data") or {}
-check("alice 得到90%报酬", mea.get("goldBalance") == int(reward * 0.9),
+check("alice 得到90%报酬", int(mea.get("goldBalance") or 0) == int(reward * 0.9),
       f"gold={mea.get('goldBalance')} expected={int(reward * 0.9)}")
 me4 = call("GET", "/adventurer/me", token=bobs).get("data") or {}
 
