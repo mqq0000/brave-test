@@ -32,6 +32,11 @@
             <el-button type="primary" @click="doCreateTask">立此存照</el-button>
           </div>
           <div class="tip">完成得币 + 技能经验 20 + 净化萌芽 2；自我铸币每日上限 500 币</div>
+          <div class="tpl-row">
+            <span class="f-label">常用好习惯，一键立任务：</span>
+            <el-tag v-for="tpl in templates" :key="tpl.title" class="tpl-tag" type="success"
+                    effect="plain" @click="useTemplate(tpl)">{{ tpl.title }} +{{ tpl.reward }}</el-tag>
+          </div>
         </el-card>
 
         <el-empty v-if="!tasks.length" description="还没有给自己立任务，从一件小事开始" />
@@ -40,6 +45,9 @@
             <el-card :class="{ done: t.status === 2 }">
               <div class="task-title">
                 <el-tag v-if="t.repeatType === 1" size="small" type="success">每日</el-tag>
+                <el-tag v-if="t.repeatType === 1 && t.streakDays > 0" size="small" type="warning">
+                  🔥 连续 {{ t.streakDays }} 天
+                </el-tag>
                 {{ t.title }}
               </div>
               <div class="task-desc">{{ t.description || '（无备注）' }}</div>
@@ -184,6 +192,25 @@ const skillChildren = (id) => skills.value.filter((s) => s.parentId === id)
 const skillPct = (s) =>
   s.nextLevelExp ? Math.min(100, Math.round((s.exp / s.nextLevelExp) * 100)) : 100
 
+// 常见好习惯模板：一键立每日任务，自动关联同名/含关键词的技能
+const templates = [
+  { title: '晨跑 30 分钟', reward: 30, skill: '跑步' },
+  { title: '力量训练 20 分钟', reward: 30, skill: '力量训练' },
+  { title: '冥想 10 分钟', reward: 20, skill: '冥想' },
+  { title: '阅读 30 分钟', reward: 25, skill: '阅读' },
+  { title: '写日记', reward: 15, skill: '日记' },
+  { title: '深度工作 2 小时', reward: 40, skill: '深度工作' },
+  { title: '23 点前睡觉', reward: 20, skill: null },
+  { title: '整理房间', reward: 15, skill: null },
+]
+
+async function useTemplate(tpl) {
+  const skill = tpl.skill ? skills.value.find((s) => s.name === tpl.skill) : null
+  await createSelfTask({ title: tpl.title, coinReward: tpl.reward, repeatType: 1, skillId: skill?.id ?? null })
+  ElMessage.success(`已立任务「${tpl.title}」，明天记得来打卡`)
+  loadTasks()
+}
+
 const formatTime = (t) => (t ? String(t).replace('T', ' ').slice(0, 16) : '')
 
 async function loadTasks() { tasks.value = await selfTasks() }
@@ -208,6 +235,8 @@ async function doCreateTask() {
 async function doComplete(t) {
   const res = await completeSelfTask(t.id)
   let msg = `获得 ${res.reward} 修行币`
+  if (res.streakBonus > 0) msg += `（含连续打卡奖励 +${res.streakBonus}）`
+  if (res.streakDays > 1) msg += `，已连续打卡 ${res.streakDays} 天`
   if (res.skillName) {
     msg += `，「${res.skillName}」+20 经验`
     if (res.levelUp) msg += '，升级！'
@@ -260,12 +289,18 @@ async function doRedeem(it) {
   loadShop()
 }
 
-onMounted(loadTasks)
+onMounted(() => {
+  loadTasks()
+  loadSkills()
+})
 </script>
 
 <style scoped>
 .f-label { font-size: 12px; color: #909399; margin-bottom: 4px; }
 .tip { font-size: 12px; color: #909399; margin-top: 10px; }
+.tpl-row { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.tpl-tag { cursor: pointer; }
+.tpl-tag:hover { transform: translateY(-1px); }
 .task-title { font-size: 15px; font-weight: 500; margin-bottom: 8px; }
 .task-desc { color: #909399; font-size: 12px; min-height: 18px; margin-bottom: 8px; }
 .task-meta { font-size: 12px; color: #909399; margin-bottom: 10px; }

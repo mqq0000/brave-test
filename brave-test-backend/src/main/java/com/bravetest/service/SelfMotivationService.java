@@ -44,6 +44,11 @@ public class SelfMotivationService {
     public static final long DAILY_MINT_CAP = 500;
     /** 每次完成任务获得的技能经验 */
     public static final int EXP_PER_COMPLETION = 20;
+    /** 连续打卡：每多连续 1 天额外奖励 +5 币，封顶 +50 */
+    public static final int STREAK_BONUS_PER_DAY = 5;
+    public static final int STREAK_BONUS_CAP = 50;
+    /** 每日边界与打卡日期统一按东八区计算 */
+    private static final java.time.ZoneId ZONE = java.time.ZoneId.of("Asia/Shanghai");
     /** 兑换金额入冒险者协会的比例 */
     private static final double ASSOC_FEE_RATE = 0.10;
     /** 默认技能树模板 */
@@ -107,23 +112,38 @@ public class SelfMotivationService {
         if (task.getStatus() != SelfTask.ST_ACTIVE) {
             throw new BusinessException("该任务已完结");
         }
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZONE);
+        LocalDate today = now.toLocalDate();
         if (task.getRepeatType() == SelfTask.REPEAT_DAILY
                 && task.getLastCompletedAt() != null
-                && task.getLastCompletedAt().toLocalDate().equals(now.toLocalDate())) {
+                && task.getLastCompletedAt().toLocalDate().equals(today)) {
             throw new BusinessException("每日任务今日已完成，明天再来");
         }
 
+        // 连续打卡：昨天完成过则 +1，否则重置为第 1 天（仅每日任务）
+        int streakDays = 1;
+        int streakBonus = 0;
+        if (task.getRepeatType() == SelfTask.REPEAT_DAILY) {
+            if (task.getLastCompletedAt() != null
+                    && task.getLastCompletedAt().toLocalDate().equals(today.minusDays(1))) {
+                streakDays = (task.getStreakDays() == null ? 0 : task.getStreakDays()) + 1;
+            }
+            streakBonus = Math.min((streakDays - 1) * STREAK_BONUS_PER_DAY, STREAK_BONUS_CAP);
+        }
+
+        long totalReward = task.getCoinReward() + streakBonus;
         long mintedToday = mintedToday(userId);
-        if (mintedToday + task.getCoinReward() > DAILY_MINT_CAP) {
+        if (mintedToday + totalReward > DAILY_MINT_CAP) {
             throw new BusinessException("今日自我激励奖励已达上限 " + DAILY_MINT_CAP + " 金币，休息一下，明天继续");
         }
 
         Adventurer adv = financeService.requireAdventurerByUserId(userId);
-        financeService.addGold(adv.getId(), task.getCoinReward(), "SELF_TASK", "SELF_TASK", taskId);
+        financeService.addGold(adv.getId(), totalReward, "SELF_TASK", "SELF_TASK", taskId);
 
         Map<String, Object> vo = new HashMap<>();
-        vo.put("reward", task.getCoinReward());
+        vo.put("reward", totalReward);
+        vo.put("baseReward", task.getCoinReward());
+        vo.put("streakBonus", streakBonus);
 
         // 技能经验与升级
         if (task.getSkillId() != null) {
@@ -150,9 +170,13 @@ public class SelfMotivationService {
         update.setLastCompletedAt(now);
         update.setStatus(task.getRepeatType() == SelfTask.REPEAT_DAILY
                 ? SelfTask.ST_ACTIVE : SelfTask.ST_DONE);
+        if (task.getRepeatType() == SelfTask.REPEAT_DAILY) {
+            update.setStreakDays(streakDays);
+        }
         taskMapper.updateById(update);
 
-        vo.put("mintedToday", mintedToday + task.getCoinReward());
+        vo.put("streakDays", streakDays);
+        vo.put("mintedToday", mintedToday + totalReward);
         vo.put("dailyCap", DAILY_MINT_CAP);
         return vo;
     }
@@ -183,7 +207,7 @@ public class SelfMotivationService {
                 .eq(GoldFlow::getUserId, userId)
                 .eq(GoldFlow::getBizType, "SELF_TASK")
                 .gt(GoldFlow::getAmount, 0)
-                .ge(GoldFlow::getCreatedAt, LocalDate.now().atStartOfDay()));
+                .ge(GoldFlow::getCreatedAt, LocalDate.now(ZONE).atStartOfDay()));
         return flows.stream().mapToLong(f -> f.getAmount() == null ? 0 : f.getAmount()).sum();
     }
 

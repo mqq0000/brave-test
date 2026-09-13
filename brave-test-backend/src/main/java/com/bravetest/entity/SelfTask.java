@@ -33,5 +33,7 @@ public class SelfTask {
     private Integer repeatType;
     private Integer status;
     private LocalDateTime lastCompletedAt;
+    /** 连续打卡天数（每日任务） */
+    private Integer streakDays;
     private LocalDateTime createdAt;
 }

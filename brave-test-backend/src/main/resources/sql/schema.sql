@@ -265,6 +265,7 @@ CREATE TABLE IF NOT EXISTS `self_task` (
     `repeat_type`       TINYINT      NOT NULL DEFAULT 0 COMMENT '0一次性 1每日',
     `status`            TINYINT      NOT NULL DEFAULT 1 COMMENT '1进行中 2已完成 3已放弃',
     `last_completed_at` DATETIME     NULL,
+    `streak_days`       INT          NOT NULL DEFAULT 0 COMMENT '连续打卡天数(每日任务)',
     `created_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     KEY `idx_user` (`user_id`, `status`)
