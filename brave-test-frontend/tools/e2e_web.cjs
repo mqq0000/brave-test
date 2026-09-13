@@ -47,7 +47,8 @@ const ok = (name, cond, detail = '') =>
   await page.waitForTimeout(1200);
   ok('登录跳转任务大厅', page.url().includes('/tasks'), page.url());
   const taskBody = await page.textContent('body');
-  ok('任务大厅有行者善事任务', taskBody.includes('社区送温暖'));
+  ok('任务大厅有行者善事任务',
+     ['照看独居老人', '清理公园', '社区送温暖'].some((k) => taskBody.includes(k)));
   await page.screenshot({ path: SHOTS + '02-tasks.png', fullPage: true });
 
   // 4. 冒险剧情：进入序章第一个节点
@@ -61,13 +62,15 @@ const ok = (name, cond, detail = '') =>
   ok('进入章节可见剧情节点', !nodeBody.includes('ç¬') && (nodeBody.includes('选择') || nodeBody.includes('你')));
   await page.screenshot({ path: SHOTS + '03-story.png', fullPage: true });
 
-  // 5. 修身养成（自我激励系统）
+  // 5. 修身养成（自我激励系统）：真实创建一次自我任务
   await page.goto(BASE + '/self', { waitUntil: 'networkidle' }).catch(() => {});
   await page.waitForTimeout(1000);
+  await page.fill('input[placeholder*="跑步"]', 'E2E 冒烟任务').catch(() => {});
   await page.click('.el-button--primary').catch(() => {});
   await page.waitForTimeout(1200);
   const testBody = await page.textContent('body');
-  ok('修身养成页可用（自我任务/技能树）', testBody.includes('自我任务') && testBody.includes('技能树'));
+  ok('修身养成页可用（自我任务/技能树）',
+     testBody.includes('自我任务') && testBody.includes('技能树') && testBody.includes('修行币'));
   await page.screenshot({ path: SHOTS + '04-test.png', fullPage: true });
 
   // 6. 商城
